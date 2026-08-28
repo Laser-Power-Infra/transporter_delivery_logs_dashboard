@@ -1,0 +1,38 @@
+# Dependencies
+/node_modules
+/.pnpm-store
+
+# Next.js Build Output
+/.next/
+/out/
+/build
+
+# Environment Variables
+.env
+.env*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor Directories
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma Generated Files (keep schema.prisma & migrations, ignore sqlite/local db binaries if any)
+prisma/*.db
+prisma/*.db-journal
+
+# Temporary Scratch Files
+scratch/
+*.tmp

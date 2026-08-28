@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # Next.js Widescreen Dashboard Web Application Container
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: delivery_dashboard_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-"postgresql://asmita:asmita@postgres:5432/DeliveryDB"}
+      NEXT_PUBLIC_SHEET_URL: ${NEXT_PUBLIC_SHEET_URL:-"https://docs.google.com/spreadsheets/d/19oxRDn6uiERIB97Jjz75aR2cEjzdWCFMWsnQJpDX2qg/edit?gid=0#gid=0"}
+      PORT: 3000
+    networks:
+      - infra
+
+networks:
+  infra:
+    external: true

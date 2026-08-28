@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      Role     @default(OPERATOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[]
+}
+
+model Delivery {
+  id                 String     @id @default(cuid())
+  diNo               String?
+  invoiceNo          String?
+  date               String?
+  buyerName          String?
+  transporterName    String?
+  truckNumber        String?
+  driverContactNo    String?
+  lrNo               String?
+  freightOrder       String?
+  toPlaceName        String?
+  address            String?    @db.Text
+  itemName           String?
+  drumQty            String?
+  deliveryStatus     String?    @default("PENDING")
+  remarks            String?    @db.Text
+  deliveryRemarks    String?    @db.Text
+  vehicleReachedDate String?
+  deliveryDate       String?
+  hasMismatch        Boolean    @default(false)
+  mismatchDetails    String?    @db.Text
+  lastSyncedAt       DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  auditLogs          AuditLog[]
+
+  @@index([invoiceNo])
+  @@index([deliveryStatus])
+  @@index([transporterName])
+  @@index([diNo])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  deliveryId  String?
+  invoiceNo   String
+  fieldName   String
+  oldValue    String?  @db.Text
+  newValue    String?  @db.Text
+  userId      String
+  userName    String
+  userEmail   String
+  action      String
+  timestamp   DateTime @default(now())
+
+  delivery    Delivery? @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceNo])
+  @@index([userId])
+  @@index([timestamp])
+}

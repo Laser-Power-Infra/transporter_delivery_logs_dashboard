@@ -7,11 +7,11 @@ services:
     container_name: delivery_dashboard_app
     restart: always
     ports:
-      - "3000:3000"
+      - "6010:6010"
     environment:
-      DATABASE_URL: ${DATABASE_URL:-"postgresql://asmita:asmita@postgres:5432/DeliveryDB"}
-      NEXT_PUBLIC_SHEET_URL: ${NEXT_PUBLIC_SHEET_URL:-"https://docs.google.com/spreadsheets/d/19oxRDn6uiERIB97Jjz75aR2cEjzdWCFMWsnQJpDX2qg/edit?gid=0#gid=0"}
-      PORT: 3000
+      DATABASE_URL: "postgresql://asmita:asmita@postgres:5432/DeliveryDB"
+      NEXT_PUBLIC_SHEET_URL: "https://docs.google.com/spreadsheets/d/19oxRDn6uiERIB97Jjz75aR2cEjzdWCFMWsnQJpDX2qg/edit?gid=0#gid=0"
+      PORT: 6010
     networks:
       - infra
 

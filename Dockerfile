@@ -22,7 +22,7 @@ RUN npm run build
 # 4. Production Runner stage
 FROM base AS runner
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=6010
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -37,12 +37,8 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-EXPOSE 3000
-
-# Entrypoint script to run DB migrations/push then start app
-COPY docker-start.sh ./docker-start.sh
-RUN chmod +x ./docker-start.sh
+EXPOSE 6010
 
 USER nextjs
 
-CMD ["/bin/sh", "./docker-start.sh"]
+CMD ["node", "server.js"]

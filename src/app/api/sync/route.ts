@@ -30,12 +30,28 @@ export async function POST(req: NextRequest) {
     const baseCsvUrl = getCsvExportUrl(sheetUrl);
     const csvExportUrl = `${baseCsvUrl}${baseCsvUrl.includes('?') ? '&' : '?'}_t=${Date.now()}`;
 
-    const response = await fetch(csvExportUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
-      cache: 'no-store',
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    let response: Response;
+    try {
+      response = await fetch(csvExportUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+    } catch (fetchErr: any) {
+      console.warn('Google Sheet fetch network issue:', fetchErr.message);
+      return NextResponse.json({
+        success: true,
+        stats: { totalSheetRows: 0, newInserted: 0, updatedCount: 0, deletedCount: 0, nullIgnoredCount: 0, mismatchesCount: 0, details: ['Sheet network timeout: serving cached database data.'] },
+        message: 'Google Sheet temporarily unreachable, serving cached database data.',
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       return NextResponse.json(

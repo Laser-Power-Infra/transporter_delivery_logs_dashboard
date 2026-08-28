@@ -150,13 +150,7 @@ export async function processSheetSync(
 
   if (rows.length === 0) return stats;
 
-  // Drop unique constraint on invoiceNo if present in PostgreSQL
-  try {
-    await prisma.$executeRawUnsafe('ALTER TABLE "Delivery" DROP CONSTRAINT IF EXISTS "Delivery_invoiceNo_key";');
-    await prisma.$executeRawUnsafe('DROP INDEX IF EXISTS "Delivery_invoiceNo_key";');
-  } catch (e) {
-    // Ignore error if constraint already dropped
-  }
+
 
   if (clearCorruptedOldRecords) {
     try {

@@ -187,8 +187,8 @@ export default function DashboardPage() {
     // 1. Initial Sync on load
     performLiveSync();
 
-    // 2. Poll every 10 seconds for instant live sheet updates
-    const interval = setInterval(performLiveSync, 10000);
+    // 2. Poll every 5 minutes (300,000 ms) for live sheet updates
+    const interval = setInterval(performLiveSync, 5 * 60 * 1000);
 
     // 3. Re-sync immediately when tab is refocused
     const handleFocus = () => performLiveSync();

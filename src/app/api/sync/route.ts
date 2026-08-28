@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
     };
     const clearOldCorruptedData = Boolean(body.clearOldCorruptedData);
 
-    const csvExportUrl = getCsvExportUrl(sheetUrl);
+    const baseCsvUrl = getCsvExportUrl(sheetUrl);
+    const csvExportUrl = `${baseCsvUrl}${baseCsvUrl.includes('?') ? '&' : '?'}_t=${Date.now()}`;
 
     const response = await fetch(csvExportUrl, {
       headers: {

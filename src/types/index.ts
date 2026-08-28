@@ -81,6 +81,7 @@ export interface SyncStats {
   totalSheetRows: number;
   newInserted: number;
   updatedCount: number;
+  deletedCount?: number;
   nullIgnoredCount: number;
   mismatchesCount: number;
   details: string[];

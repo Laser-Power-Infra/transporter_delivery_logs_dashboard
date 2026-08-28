@@ -208,23 +208,87 @@ export async function processSheetSync(
   }
 
   // Incremental sync for existing database records
-  const allDBRecords = await prisma.delivery.findMany();
-  const dbRecordMap = new Map<string, any>();
-
-  allDBRecords.forEach((rec) => {
-    const key = `${rec.invoiceNo || ''}||${rec.diNo || ''}||${rec.itemName || ''}||${rec.drumQty || ''}||${rec.date || ''}`;
-    dbRecordMap.set(key, rec);
+  const allDBRecords = await prisma.delivery.findMany({
+    select: {
+      id: true,
+      invoiceNo: true,
+      diNo: true,
+      itemName: true,
+      drumQty: true,
+      date: true,
+      buyerName: true,
+      transporterName: true,
+      truckNumber: true,
+      driverContactNo: true,
+      lrNo: true,
+      freightOrder: true,
+      toPlaceName: true,
+      address: true,
+      deliveryStatus: true,
+      remarks: true,
+      deliveryRemarks: true,
+      vehicleReachedDate: true,
+      deliveryDate: true,
+      hasMismatch: true,
+    },
   });
 
-  const newRecordsToCreate: any[] = [];
-  const now = new Date();
+  const dbPrimaryQueueMap = new Map<string, any[]>();
+  const dbSecondaryQueueMap = new Map<string, any[]>();
 
+  allDBRecords.forEach((rec) => {
+    const key1 = `${rec.invoiceNo || ''}||${rec.diNo || ''}||${rec.itemName || ''}||${rec.drumQty || ''}||${rec.date || ''}`;
+    if (!dbPrimaryQueueMap.has(key1)) dbPrimaryQueueMap.set(key1, []);
+    dbPrimaryQueueMap.get(key1)!.push(rec);
+
+    const key2 = `${rec.buyerName || ''}||${rec.date || ''}||${rec.transporterName || ''}||${rec.truckNumber || ''}`;
+    if (key2 !== '||||') {
+      if (!dbSecondaryQueueMap.has(key2)) dbSecondaryQueueMap.set(key2, []);
+      dbSecondaryQueueMap.get(key2)!.push(rec);
+    }
+  });
+
+  const usedDbIds = new Set<string>();
+  const newRecordsToCreate: any[] = [];
   const updatesToPerform: Array<{ id: string; data: Record<string, any> }> = [];
+  const now = new Date();
 
   for (let idx = 0; idx < rows.length; idx++) {
     const row = rows[idx];
-    const key = `${row.invoiceNo || ''}||${row.diNo || ''}||${row.itemName || ''}||${row.drumQty || ''}||${row.date || ''}`;
-    const existingDB = dbRecordMap.get(key);
+    const key1 = `${row.invoiceNo || ''}||${row.diNo || ''}||${row.itemName || ''}||${row.drumQty || ''}||${row.date || ''}`;
+    const key2 = `${row.buyerName || ''}||${row.date || ''}||${row.transporterName || ''}||${row.truckNumber || ''}`;
+
+    let existingDB: any = null;
+
+    // 1. Primary queue match (invoiceNo + diNo + itemName + drumQty + date)
+    const primaryQueue = dbPrimaryQueueMap.get(key1);
+    if (primaryQueue) {
+      while (primaryQueue.length > 0) {
+        const candidate = primaryQueue.shift();
+        if (candidate && !usedDbIds.has(candidate.id)) {
+          existingDB = candidate;
+          break;
+        }
+      }
+    }
+
+    // 2. Secondary queue match (buyerName + date + transporterName + truckNumber) for edited rows
+    if (!existingDB && key2 !== '||||') {
+      const secondaryQueue = dbSecondaryQueueMap.get(key2);
+      if (secondaryQueue) {
+        while (secondaryQueue.length > 0) {
+          const candidate = secondaryQueue.shift();
+          if (candidate && !usedDbIds.has(candidate.id)) {
+            existingDB = candidate;
+            break;
+          }
+        }
+      }
+    }
+
+    if (existingDB) {
+      usedDbIds.add(existingDB.id);
+    }
 
     if (!existingDB) {
       const newDeliveryData: Record<string, any> = {
@@ -253,7 +317,7 @@ export async function processSheetSync(
       for (const field of SYNCABLE_FIELDS) {
         const rawSheetVal = row[field];
         const sheetVal = rawSheetVal !== undefined && rawSheetVal !== null ? String(rawSheetVal).trim() : '';
-        const dbVal = existingDB[field] ? String(existingDB[field]).trim() : '';
+        const dbVal = (existingDB as any)[field] ? String((existingDB as any)[field]).trim() : '';
 
         if (sheetVal !== '' && sheetVal !== '-' && sheetVal !== dbVal) {
           updateData[field] = sheetVal;
@@ -272,6 +336,20 @@ export async function processSheetSync(
         stats.updatedCount++;
       }
     }
+  }
+
+  // Find DB records that were deleted/removed from the Google Sheet
+  const deletedDbIds: string[] = [];
+  allDBRecords.forEach((rec) => {
+    if (!usedDbIds.has(rec.id)) {
+      deletedDbIds.push(rec.id);
+    }
+  });
+
+  // Fast-path: If no new rows, no updated rows, and no deleted rows exist, do not write to DB
+  if (updatesToPerform.length === 0 && newRecordsToCreate.length === 0 && deletedDbIds.length === 0) {
+    stats.details.push(`All ${rows.length} sheet rows are already up-to-date in database. 0 changes required.`);
+    return stats;
   }
 
   if (updatesToPerform.length > 0) {
@@ -299,7 +377,20 @@ export async function processSheetSync(
     }
   }
 
+  if (deletedDbIds.length > 0) {
+    const CHUNK_SIZE = 500;
+    for (let i = 0; i < deletedDbIds.length; i += CHUNK_SIZE) {
+      const chunk = deletedDbIds.slice(i, i + CHUNK_SIZE);
+      await prisma.delivery.deleteMany({
+        where: { id: { in: chunk } },
+      });
+    }
+    stats.deletedCount = deletedDbIds.length;
+  }
+
   invalidateDeliveryCache();
-  stats.details.push(`Successfully synchronized ${rows.length} total rows (${stats.newInserted} new, ${stats.updatedCount} updated).`);
+  stats.details.push(
+    `Successfully synchronized ${rows.length} total rows (${stats.newInserted} new, ${stats.updatedCount} updated, ${stats.deletedCount || 0} deleted).`
+  );
   return stats;
 }

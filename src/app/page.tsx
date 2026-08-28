@@ -154,13 +154,17 @@ export default function DashboardPage() {
     fetchDeliveries();
   }, [search, statusFilter, transporterFilter, mismatchOnly, page, limit, columnFilters, dateRangeFilters, fetchDeliveries]);
 
-  // Background Auto-Sync Sheet Data without blocking initial load
+  // Live Continuous Auto-Sync: Runs on page load, every 10s, and when tab comes into focus!
   useEffect(() => {
-    async function backgroundSyncSheetData() {
-      if (!activeUser) return;
+    if (!activeUser) return;
+
+    let isSyncing = false;
+    async function performLiveSync() {
+      if (isSyncing) return;
+      isSyncing = true;
       setIsAutoSyncing(true);
       try {
-        await fetch('/api/sync', {
+        const res = await fetch('/api/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -168,16 +172,33 @@ export default function DashboardPage() {
             clearOldCorruptedData: false,
           }),
         });
-        fetchDeliveries();
+        const data = await res.json();
+        if (data.success && (data.stats?.newInserted > 0 || data.stats?.updatedCount > 0 || (data.stats?.deletedCount && data.stats.deletedCount > 0))) {
+          fetchDeliveries();
+        }
       } catch (err) {
-        console.warn('Background sheet sync skipped:', err);
+        console.warn('Live sheet sync skipped:', err);
       } finally {
+        isSyncing = false;
         setIsAutoSyncing(false);
       }
     }
 
-    backgroundSyncSheetData();
-  }, [activeUser]);
+    // 1. Initial Sync on load
+    performLiveSync();
+
+    // 2. Poll every 10 seconds for instant live sheet updates
+    const interval = setInterval(performLiveSync, 10000);
+
+    // 3. Re-sync immediately when tab is refocused
+    const handleFocus = () => performLiveSync();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [activeUser, fetchDeliveries]);
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sans antialiased">

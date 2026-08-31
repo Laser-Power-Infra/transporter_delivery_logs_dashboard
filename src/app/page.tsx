@@ -8,11 +8,53 @@ import { DeliveryEditModal } from '@/components/DeliveryEditModal';
 import { AuditLogsModal } from '@/components/AuditLogsModal';
 import { SyncModal } from '@/components/SyncModal';
 import { MismatchModal } from '@/components/MismatchModal';
+import { LoginModal } from '@/components/LoginModal';
+import { UserManagementModal } from '@/components/UserManagementModal';
 import { Delivery, User } from '@/types';
 
 export default function DashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [activeUser, setActiveUser] = useState<User | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+  const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState<boolean>(false);
+
+  // Check current JWT session user on mount
+  useEffect(() => {
+    async function checkAuthSession() {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.success && data.user) {
+          setActiveUser(data.user);
+          setIsLoginModalOpen(false);
+        } else {
+          setActiveUser(null);
+          setIsLoginModalOpen(true);
+        }
+      } catch (err) {
+        console.error('Failed to verify auth session:', err);
+        setActiveUser(null);
+        setIsLoginModalOpen(true);
+      }
+    }
+    checkAuthSession();
+  }, []);
+
+  const handleLoginSuccess = (user: User) => {
+    setActiveUser(user);
+    setIsLoginModalOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setActiveUser(null);
+      setIsLoginModalOpen(true);
+    }
+  };
 
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [dbStats, setDbStats] = useState<{
@@ -211,6 +253,8 @@ export default function DashboardPage() {
         onOpenAuditLogs={() => setIsAuditLogsModalOpen(true)}
         onOpenSync={() => setIsSyncModalOpen(true)}
         onOpenMismatches={() => setIsMismatchModalOpen(true)}
+        onOpenUserManagement={() => setIsUserManagementModalOpen(true)}
+        onLogout={handleLogout}
         mismatchCount={liveStats.mismatchCount}
         isSyncing={isAutoSyncing}
       />
@@ -315,6 +359,19 @@ export default function DashboardPage() {
           setSelectedDelivery(del);
           setIsEditModalOpen(true);
         }}
+      />
+
+      {/* JWT Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Admin User Management Modal */}
+      <UserManagementModal
+        isOpen={isUserManagementModalOpen}
+        onClose={() => setIsUserManagementModalOpen(false)}
+        activeUser={activeUser}
       />
 
     </div>

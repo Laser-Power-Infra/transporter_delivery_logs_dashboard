@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { User } from '@/types';
-import { RefreshCw, History, Shield, AlertTriangle, UserCheck, FileSpreadsheet } from 'lucide-react';
+import { RefreshCw, History, AlertTriangle, UserCheck, FileSpreadsheet, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
 
 interface NavbarProps {
   users: User[];
@@ -11,6 +11,8 @@ interface NavbarProps {
   onOpenSync: () => void;
   onOpenAuditLogs: () => void;
   onOpenMismatches: () => void;
+  onOpenUserManagement?: () => void;
+  onLogout?: () => void;
   mismatchCount: number;
   isSyncing: boolean;
 }
@@ -22,6 +24,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSync,
   onOpenAuditLogs,
   onOpenMismatches,
+  onOpenUserManagement,
+  onLogout,
   mismatchCount,
   isSyncing,
 }) => {
@@ -31,7 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         
         {/* Brand */}
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-sky-600 rounded-lg text-white shadow">
+          <div className="p-2 bg-indigo-600 rounded-lg text-white shadow">
             <FileSpreadsheet className="w-6 h-6" />
           </div>
           <div>
@@ -39,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons & User Switcher */}
+        {/* Action Buttons & User Info */}
         <div className="flex items-center space-x-3">
           
           {/* Mismatch Alert Button */}
@@ -58,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={onOpenSync}
             disabled={isSyncing}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow transition disabled:opacity-50"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow transition disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
             <span>{isSyncing ? 'Syncing...' : 'Sync Sheet Data'}</span>
@@ -69,31 +73,59 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onOpenAuditLogs}
             className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition"
           >
-            <History className="w-3.5 h-3.5 text-sky-400" />
+            <History className="w-3.5 h-3.5 text-indigo-400" />
             <span>Audit History</span>
           </button>
 
-          {/* Active User Switcher */}
-          <div className="flex items-center bg-slate-800 border border-slate-700 rounded-md px-2 py-1 space-x-2">
-            <UserCheck className="w-4 h-4 text-emerald-400" />
-            <div className="text-xs">
-              <span className="text-slate-400 block text-[10px] uppercase font-semibold leading-none">Active User</span>
-              <select
-                value={activeUser?.id || ''}
-                onChange={(e) => {
-                  const target = users.find((u) => u.id === e.target.value);
-                  if (target) onSelectUser(target);
-                }}
-                className="bg-transparent text-white font-medium text-xs focus:outline-none cursor-pointer pr-1"
-              >
-                {users.map((u) => (
-                  <option key={u.id} value={u.id} className="bg-slate-900 text-slate-200">
-                    {u.name} ({u.role})
-                  </option>
-                ))}
-              </select>
+          {/* Admin User Management Button */}
+          {activeUser?.role === 'ADMIN' && onOpenUserManagement && (
+            <button
+              onClick={onOpenUserManagement}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border border-indigo-700/60 text-xs font-semibold transition"
+              title="Add & Manage Users or Admins"
+            >
+              <UserPlus className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Add User</span>
+            </button>
+          )}
+
+          {/* Active Logged-in User Badge */}
+          {activeUser && (
+            <div className="flex items-center bg-slate-800/90 border border-slate-700/80 rounded-md px-3 py-1.5 space-x-2.5">
+              {activeUser.role === 'ADMIN' ? (
+                <ShieldCheck className="w-4 h-4 text-indigo-400" />
+              ) : (
+                <UserCheck className="w-4 h-4 text-emerald-400" />
+              )}
+              <div className="text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-white leading-none">{activeUser.name}</span>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase tracking-wider ${
+                      activeUser.role === 'ADMIN'
+                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    }`}
+                  >
+                    {activeUser.role}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 block mt-0.5">{activeUser.email}</span>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Logout Button */}
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="flex items-center space-x-1 px-3 py-1.5 rounded-md bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold transition"
+              title="Sign Out of Session"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <span>Logout</span>
+            </button>
+          )}
 
         </div>
 

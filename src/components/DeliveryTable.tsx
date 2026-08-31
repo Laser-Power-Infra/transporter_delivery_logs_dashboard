@@ -1103,43 +1103,44 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
     const dateRange = dateRangeFilters[fieldKey] || { from: '', to: '' };
     const dropdownOptions = (serverUniqueColumnValues && serverUniqueColumnValues[fieldKey]) || uniqueColumnValues[fieldKey] || [];
     const hasFilter = filterVal.trim().length > 0 || Boolean(dateRange.from || dateRange.to);
+    const cleanLabel = label.replace(/\([A-Z]\)\s*/, '');
 
     return (
       <th 
-        className={`py-2.5 px-2.5 whitespace-nowrap bg-slate-100 transition border-b border-slate-200 ${
+        className={`py-2 px-2.5 whitespace-nowrap bg-slate-100/90 hover:bg-slate-200/80 transition border-b border-slate-200 ${
           isSticky ? 'sticky left-0 z-20 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''
         }`}
       >
-        <div className="space-y-1.5">
-          {/* Header Title & 3-State Sorting (1st click: ASC, 2nd click: DESC, 3rd click: NORMAL) */}
+        <div className="space-y-1.5 min-w-[130px]">
+          {/* Header Title & 3-State Sorting */}
           <div 
             onClick={() => handleSort(fieldKey as keyof Delivery)}
-            className={`flex items-center justify-between cursor-pointer select-none transition ${
-              sortField === fieldKey && sortOrder !== 'none' ? 'text-sky-700 font-black' : 'hover:text-slate-900 text-slate-700'
+            className={`flex items-center justify-between cursor-pointer select-none py-0.5 group transition ${
+              sortField === fieldKey && sortOrder !== 'none' ? 'text-indigo-700 font-black' : 'text-slate-700 hover:text-slate-900'
             }`}
-            title={`Click to sort by ${label} (1st click: Ascending, 2nd click: Descending, 3rd click: Reset)`}
+            title={`Click to sort by ${label}`}
           >
-            <span className="font-bold text-[11px] uppercase tracking-wider">{label}</span>
+            <span className="font-bold text-[11px] uppercase tracking-wide truncate">{label}</span>
             {sortField === fieldKey && sortOrder !== 'none' ? (
-              <span className="text-sky-600 font-extrabold text-xs ml-1 flex items-center">
+              <span className="text-indigo-600 font-extrabold text-[10px] ml-1 flex items-center">
                 {sortOrder === 'asc' ? '▲' : '▼'}
               </span>
             ) : (
-              <ArrowUpDown className="w-3 h-3 text-slate-400 hover:text-slate-600 flex-shrink-0 ml-1" />
+              <ArrowUpDown className="w-3 h-3 text-slate-400 group-hover:text-slate-600 flex-shrink-0 ml-1 opacity-60" />
             )}
           </div>
 
-          {/* Excel-like Header Filter Control */}
+          {/* Clean Single Header Filter Control */}
           {showColumnFilters && (
-            <div className="space-y-1">
+            <div>
               {isDateColumn ? (
                 /* Date Range Picker for Date Columns */
                 <div className={`p-1 bg-white border rounded text-[10px] space-y-1 shadow-2xs ${
-                  hasFilter ? 'border-sky-500 bg-sky-50 font-bold' : 'border-slate-300'
+                  hasFilter ? 'border-indigo-500 bg-indigo-50/50 font-bold' : 'border-slate-300'
                 }`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-slate-500 font-bold flex items-center gap-0.5">
-                      <Calendar className="w-2.5 h-2.5 text-sky-600" /> Range:
+                  <div className="flex items-center justify-between text-[9px] text-slate-500 font-bold">
+                    <span className="flex items-center gap-0.5 text-indigo-700">
+                      <Calendar className="w-2.5 h-2.5" /> Date Range
                     </span>
                     {hasFilter && (
                       <button
@@ -1159,46 +1160,56 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
                       fieldKey={fieldKey}
                       boundary="from"
                       value={dateRange.from}
-                      placeholder="From (01-08)"
+                      placeholder="From"
                       onChange={handleDateRangeChange}
                     />
                     <DebouncedDateRangeInput
                       fieldKey={fieldKey}
                       boundary="to"
                       value={dateRange.to}
-                      placeholder="To (31-08)"
+                      placeholder="To"
                       onChange={handleDateRangeChange}
                     />
                   </div>
                 </div>
-              ) : (
-                /* Categorical Dropdown + Search Filter */
-                <div className="relative space-y-1">
-                  {dropdownOptions.length > 0 && (
-                    <select
-                      value={filterVal}
-                      onChange={(e) => handleColumnFilterChange(fieldKey, e.target.value)}
-                      className={`w-full px-1.5 py-1 text-[11px] font-semibold bg-white border rounded focus:outline-none focus:ring-1 focus:ring-sky-500 transition ${
-                        hasFilter ? 'border-sky-500 bg-sky-50 text-sky-950 font-bold shadow-2xs' : 'border-slate-300 text-slate-800'
-                      }`}
-                    >
-                      <option value="">All {label.replace(/\([A-Z]\)\s*/, '')} ({dropdownOptions.length})</option>
-                      {dropdownOptions.map((opt) => (
-                        <option key={opt.val} value={opt.val}>
-                          {opt.val} ({opt.count})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-
-                  {/* Debounced Fast Text Filter Input */}
-                  <DebouncedHeaderInput
-                    placeholder={`Search ${label.replace(/\([A-Z]\)\s*/, '')}...`}
+              ) : dropdownOptions.length > 0 ? (
+                /* Single Categorical Dropdown Control with Clear button */
+                <div className="relative">
+                  <select
                     value={filterVal}
-                    hasFilter={hasFilter}
-                    onChange={(val) => handleColumnFilterChange(fieldKey, val)}
-                  />
+                    onChange={(e) => handleColumnFilterChange(fieldKey, e.target.value)}
+                    className={`w-full pl-2 pr-6 py-1 text-[11px] font-semibold bg-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 transition truncate ${
+                      hasFilter ? 'border-indigo-500 bg-indigo-50 text-indigo-950 font-bold shadow-2xs' : 'border-slate-300 text-slate-700'
+                    }`}
+                  >
+                    <option value="">All {cleanLabel} ({dropdownOptions.length})</option>
+                    {dropdownOptions.map((opt) => (
+                      <option key={opt.val} value={opt.val}>
+                        {opt.val} ({opt.count})
+                      </option>
+                    ))}
+                  </select>
+                  {hasFilter && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleColumnFilterChange(fieldKey, '');
+                      }}
+                      className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-600 p-0.5"
+                      title="Clear filter"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
+              ) : (
+                /* Debounced Text Filter Input */
+                <DebouncedHeaderInput
+                  placeholder={`Search ${cleanLabel}...`}
+                  value={filterVal}
+                  hasFilter={hasFilter}
+                  onChange={(val) => handleColumnFilterChange(fieldKey, val)}
+                />
               )}
             </div>
           )}

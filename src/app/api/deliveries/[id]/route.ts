@@ -4,6 +4,8 @@ import { createAuditLog } from '@/lib/audit';
 import { FIELD_LABELS } from '@/lib/sheetSync';
 import { invalidateDeliveryCache } from '@/lib/cache';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }

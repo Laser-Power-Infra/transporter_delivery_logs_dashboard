@@ -18,9 +18,12 @@ export default function DashboardPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
   const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState<boolean>(false);
 
+  const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
+
   // Check current JWT session user on mount
   useEffect(() => {
     async function checkAuthSession() {
+      setIsAuthChecking(true);
       try {
         const res = await fetch('/api/auth/me');
         const data = await res.json();
@@ -35,6 +38,8 @@ export default function DashboardPage() {
         console.error('Failed to verify auth session:', err);
         setActiveUser(null);
         setIsLoginModalOpen(true);
+      } finally {
+        setIsAuthChecking(false);
       }
     }
     checkAuthSession();
@@ -43,6 +48,7 @@ export default function DashboardPage() {
   const handleLoginSuccess = (user: User) => {
     setActiveUser(user);
     setIsLoginModalOpen(false);
+    fetchDeliveries();
   };
 
   const handleLogout = async () => {

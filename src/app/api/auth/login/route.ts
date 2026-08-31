@@ -68,12 +68,12 @@ export async function POST(req: NextRequest) {
       message: `Welcome back, ${user.name}! Successfully authenticated as ${user.role}.`,
     });
 
-    // Set secure HTTP-Only cookie
+    // Set secure HTTP-Only cookie (compatible with both HTTP LAN and HTTPS)
     response.cookies.set({
       name: COOKIE_NAME,
       value: token,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
       sameSite: 'lax',
       maxAge: 10 * 365 * 24 * 60 * 60, // 10 years persistent login
       path: '/',

@@ -1,5 +1,12 @@
+import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
-  return Response.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() }, {
-    headers: { 'Access-Control-Allow-Origin': '*' }
-  });
+  return NextResponse.json(
+    { status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() },
+    {
+      headers: { 'Access-Control-Allow-Origin': '*' },
+    }
+  );
 }

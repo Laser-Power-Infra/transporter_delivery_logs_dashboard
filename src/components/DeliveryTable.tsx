@@ -731,6 +731,7 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
 
     const targetFields: (keyof Delivery)[] = [
       'diNo',
+      'invoiceNo',
       'buyerName',
       'transporterName',
       'truckNumber',
@@ -738,6 +739,7 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
       'lrNo',
       'freightOrder',
       'toPlaceName',
+      'address',
       'itemName',
       'drumQty',
       'deliveryStatus',
@@ -1172,44 +1174,48 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
                     />
                   </div>
                 </div>
-              ) : dropdownOptions.length > 0 ? (
-                /* Single Categorical Dropdown Control with Clear button */
-                <div className="relative">
-                  <select
-                    value={filterVal}
-                    onChange={(e) => handleColumnFilterChange(fieldKey, e.target.value)}
-                    className={`w-full pl-2 pr-6 py-1 text-[11px] font-semibold bg-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 transition truncate ${
-                      hasFilter ? 'border-indigo-500 bg-indigo-50 text-indigo-950 font-bold shadow-2xs' : 'border-slate-300 text-slate-700'
-                    }`}
-                  >
-                    <option value="">All {cleanLabel} ({dropdownOptions.length})</option>
-                    {dropdownOptions.map((opt) => (
-                      <option key={opt.val} value={opt.val}>
-                        {opt.val} ({opt.count})
-                      </option>
-                    ))}
-                  </select>
-                  {hasFilter && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleColumnFilterChange(fieldKey, '');
-                      }}
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-600 p-0.5"
-                      title="Clear filter"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
               ) : (
-                /* Debounced Text Filter Input */
-                <DebouncedHeaderInput
-                  placeholder={`Search ${cleanLabel}...`}
-                  value={filterVal}
-                  hasFilter={hasFilter}
-                  onChange={(val) => handleColumnFilterChange(fieldKey, val)}
-                />
+                /* Non-date Columns: BOTH Categorical Dropdown AND Text Search Input */
+                <div className="space-y-1">
+                  {dropdownOptions.length > 0 && (
+                    <div className="relative">
+                      <select
+                        value={filterVal}
+                        onChange={(e) => handleColumnFilterChange(fieldKey, e.target.value)}
+                        className={`w-full pl-2 pr-6 py-1 text-[11px] font-semibold bg-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 transition truncate ${
+                          hasFilter ? 'border-indigo-500 bg-indigo-50 text-indigo-950 font-bold shadow-2xs' : 'border-slate-300 text-slate-700'
+                        }`}
+                      >
+                        <option value="">All {cleanLabel} ({dropdownOptions.length})</option>
+                        {dropdownOptions.map((opt) => (
+                          <option key={opt.val} value={opt.val}>
+                            {opt.val} ({opt.count})
+                          </option>
+                        ))}
+                      </select>
+                      {hasFilter && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleColumnFilterChange(fieldKey, '');
+                          }}
+                          className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-600 p-0.5"
+                          title="Clear filter"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Debounced Fast Text Filter Input */}
+                  <DebouncedHeaderInput
+                    placeholder={`Search ${cleanLabel}...`}
+                    value={filterVal}
+                    hasFilter={hasFilter}
+                    onChange={(val) => handleColumnFilterChange(fieldKey, val)}
+                  />
+                </div>
               )}
             </div>
           )}

@@ -56,6 +56,8 @@ export interface Delivery {
   deliveryRemarks?: string | null;
   vehicleReachedDate?: string | null;
   deliveryDate?: string | null;
+  storeRemarks?: string | null;
+  storeOtherDetails?: string | null;
   hasMismatch: boolean;
   mismatchDetails?: string | null;
   lastSyncedAt?: string | null;

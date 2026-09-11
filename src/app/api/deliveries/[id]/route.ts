@@ -91,6 +91,8 @@ export async function PATCH(
       'deliveryRemarks',
       'vehicleReachedDate',
       'deliveryDate',
+      'storeRemarks',
+      'storeOtherDetails',
     ];
 
     for (const key of Object.keys(updates)) {

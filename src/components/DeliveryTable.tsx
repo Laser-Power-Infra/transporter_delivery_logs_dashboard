@@ -640,6 +640,30 @@ const MemoizedTableRow = React.memo<{
           onFilterByValue={onFilterByValue}
         />
       </td>
+
+      {/* (S) STORE REMARKS */}
+      <td className="py-1 px-1 max-w-xs truncate">
+        <MemoizedTableCell
+          item={item}
+          fieldKey="storeRemarks"
+          isSaving={savingCellKey === `${item.id}:storeRemarks`}
+          statusOptions={statusOptions}
+          onSaveCell={onSaveCell}
+          onFilterByValue={onFilterByValue}
+        />
+      </td>
+
+      {/* (T) STORE OTHER DETAILS */}
+      <td className="py-1 px-1 max-w-xs truncate">
+        <MemoizedTableCell
+          item={item}
+          fieldKey="storeOtherDetails"
+          isSaving={savingCellKey === `${item.id}:storeOtherDetails`}
+          statusOptions={statusOptions}
+          onSaveCell={onSaveCell}
+          onFilterByValue={onFilterByValue}
+        />
+      </td>
     </tr>
   );
 });
@@ -714,6 +738,8 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
     deliveryRemarks: '',
     vehicleReachedDate: '',
     deliveryDate: '',
+    storeRemarks: '',
+    storeOtherDetails: '',
   });
 
   // Date Range Filters State
@@ -745,6 +771,8 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
       'deliveryStatus',
       'deliveryRemarks',
       'remarks',
+      'storeRemarks',
+      'storeOtherDetails',
     ];
 
     targetFields.forEach((field) => {
@@ -826,6 +854,8 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
       deliveryRemarks: '',
       vehicleReachedDate: '',
       deliveryDate: '',
+      storeRemarks: '',
+      storeOtherDetails: '',
     };
     const emptyRanges = {
       date: { from: '', to: '' },
@@ -1454,6 +1484,8 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
               {renderHeaderCell('deliveryRemarks', '(P) DELIVERY REMARKS')}
               {renderHeaderCell('vehicleReachedDate', '(Q) VEHICLE REACHED DATE')}
               {renderHeaderCell('deliveryDate', '(R) DELIVERY DATE')}
+              {renderHeaderCell('storeRemarks', '(S) STORE REMARKS')}
+              {renderHeaderCell('storeOtherDetails', '(T) STORE OTHER DETAILS')}
             </tr>
           </thead>
 

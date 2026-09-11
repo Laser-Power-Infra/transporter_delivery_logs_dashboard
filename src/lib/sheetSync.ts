@@ -21,6 +21,8 @@ export const FIELD_LABELS: Record<string, string> = {
   deliveryRemarks: 'DELIVERY REMARKS',
   vehicleReachedDate: 'VEHICLE REACHED DATE',
   deliveryDate: 'DELIVERY DATE',
+  storeRemarks: 'STORE REMARKS',
+  storeOtherDetails: 'STORE OTHER DETAILS',
 };
 
 const SYNCABLE_FIELDS: (keyof SheetRow)[] = [

@@ -45,6 +45,8 @@ model Delivery {
   deliveryRemarks    String?    @db.Text
   vehicleReachedDate String?
   deliveryDate       String?
+  storeRemarks       String?    @db.Text
+  storeOtherDetails   String?    @db.Text
   hasMismatch        Boolean    @default(false)
   mismatchDetails    String?    @db.Text
   lastSyncedAt       DateTime?

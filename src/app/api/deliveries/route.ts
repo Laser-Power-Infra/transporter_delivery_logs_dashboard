@@ -111,19 +111,22 @@ export async function GET(req: NextRequest) {
     const deliveryStatusCol = searchParams.get('deliveryStatus');
     const remarks = searchParams.get('remarks');
     const deliveryRemarks = searchParams.get('deliveryRemarks');
+    const storeRemarks = searchParams.get('storeRemarks');
+    const storeOtherDetails = searchParams.get('storeOtherDetails');
 
     const hasAnyFilter = Boolean(
       search || status || transporter || mismatchOnly ||
       dateFrom || dateTo || vehicleReachedFrom || vehicleReachedTo || deliveryFrom || deliveryTo ||
       diNo || invoiceNo || buyerName || transporterNameCol || truckNumber || driverContactNo ||
       lrNo || freightOrder || toPlaceName || address || itemName || drumQty || deliveryStatusCol ||
-      remarks || deliveryRemarks
+      remarks || deliveryRemarks || storeRemarks || storeOtherDetails
     );
 
     const cached = getDeliveryCache();
-
+    const isCacheStale = cached && (!cached.uniqueColumnValues?.storeRemarks || !cached.uniqueColumnValues?.storeOtherDetails);
+    
     // FAST-PATH (<20ms): Standard Page Load / Reload without filters uses cached stats + direct limit/take SQL query
-    if (!hasAnyFilter && limit !== undefined && cached) {
+    if (!hasAnyFilter && limit !== undefined && cached && !isCacheStale) {
       const [paginatedDeliveries] = await Promise.all([
         prisma.delivery.findMany({
           orderBy: { updatedAt: 'desc' },
@@ -162,6 +165,10 @@ export async function GET(req: NextRequest) {
           { lrNo: { contains: search, mode: 'insensitive' } },
           { itemName: { contains: search, mode: 'insensitive' } },
           { address: { contains: search, mode: 'insensitive' } },
+          { remarks: { contains: search, mode: 'insensitive' } },
+          { deliveryRemarks: { contains: search, mode: 'insensitive' } },
+          { storeRemarks: { contains: search, mode: 'insensitive' } },
+          { storeOtherDetails: { contains: search, mode: 'insensitive' } },
         ],
       });
     }
@@ -188,6 +195,8 @@ export async function GET(req: NextRequest) {
     if (deliveryStatusCol) base_AND_conditions.push({ deliveryStatus: { contains: deliveryStatusCol, mode: 'insensitive' } });
     if (remarks) base_AND_conditions.push({ remarks: { contains: remarks, mode: 'insensitive' } });
     if (deliveryRemarks) base_AND_conditions.push({ deliveryRemarks: { contains: deliveryRemarks, mode: 'insensitive' } });
+    if (storeRemarks) base_AND_conditions.push({ storeRemarks: { contains: storeRemarks, mode: 'insensitive' } });
+    if (storeOtherDetails) base_AND_conditions.push({ storeOtherDetails: { contains: storeOtherDetails, mode: 'insensitive' } });
 
     const baseWhereClause = base_AND_conditions.length > 0 ? { AND: base_AND_conditions } : {};
 
@@ -295,6 +304,7 @@ export async function GET(req: NextRequest) {
     const uniqueColumnValues: Record<string, Array<{ val: string; count: number }>> = {};
     const fieldsToCount = [
       'diNo',
+      'invoiceNo',
       'buyerName',
       'transporterName',
       'truckNumber',
@@ -302,11 +312,14 @@ export async function GET(req: NextRequest) {
       'lrNo',
       'freightOrder',
       'toPlaceName',
+      'address',
       'itemName',
       'drumQty',
       'deliveryStatus',
       'deliveryRemarks',
       'remarks',
+      'storeRemarks',
+      'storeOtherDetails',
     ];
 
     fieldsToCount.forEach((field) => {

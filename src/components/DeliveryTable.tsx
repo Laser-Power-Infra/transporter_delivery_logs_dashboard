@@ -394,7 +394,7 @@ const MemoizedTableRow = React.memo<{
       }`}
     >
       {/* Checkbox Selector Cell */}
-      <td className="py-2 px-3 text-center border-r border-slate-200 bg-slate-50/40">
+      <td className="py-2 px-3 text-center border-r border-slate-200 bg-slate-50/95 sticky left-0 z-10">
         <input
           type="checkbox"
           checked={isSelected}
@@ -404,11 +404,14 @@ const MemoizedTableRow = React.memo<{
         />
       </td>
 
-      {/* (A) DI NO */}
-      <td className="py-1 px-1 whitespace-nowrap font-mono font-semibold">
+      {/* (A) DI NO - Sticky Left */}
+      <td className={`py-1 px-1 whitespace-nowrap border-r border-slate-200 sticky left-[40px] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${
+        item.hasMismatch ? 'bg-rose-100 text-rose-950' : 'bg-white text-slate-900'
+      }`}>
         <MemoizedTableCell
           item={item}
           fieldKey="diNo"
+          isSticky
           isSaving={savingCellKey === `${item.id}:diNo`}
           mismatch={mismatchMap.get('diNo')}
           statusOptions={statusOptions}
@@ -418,7 +421,7 @@ const MemoizedTableRow = React.memo<{
       </td>
 
       {/* (B) INVOICE NO - Sticky Left */}
-      <td className={`py-1 px-1 whitespace-nowrap border-r border-slate-200 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${
+      <td className={`py-1 px-1 whitespace-nowrap border-r border-slate-200 sticky left-[170px] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${
         item.hasMismatch ? 'bg-rose-100 text-rose-950' : 'bg-white text-slate-900'
       }`}>
         <MemoizedTableCell
@@ -1134,7 +1137,7 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
   }, [activeUser]);
 
   // Header Cell Renderer
-  const renderHeaderCell = (fieldKey: string, label: string, isSticky: boolean = false) => {
+  const renderHeaderCell = (fieldKey: string, label: string, stickyClass: string = '') => {
     const isDateColumn = fieldKey === 'date' || fieldKey === 'vehicleReachedDate' || fieldKey === 'deliveryDate';
     const filterVal = columnFilters[fieldKey] || '';
     const dateRange = dateRangeFilters[fieldKey] || { from: '', to: '' };
@@ -1144,8 +1147,8 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
 
     return (
       <th 
-        className={`py-2 px-2.5 whitespace-nowrap bg-slate-100/90 hover:bg-slate-200/80 transition border-b border-slate-200 ${
-          isSticky ? 'sticky left-0 z-20 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''
+        className={`py-2 px-2.5 whitespace-nowrap bg-slate-100/95 hover:bg-slate-200/90 transition border-b border-slate-200 ${
+          stickyClass ? `sticky ${stickyClass} z-20 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]` : ''
         }`}
       >
         <div className="space-y-1.5 min-w-[130px]">
@@ -1462,7 +1465,7 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
           
           <thead className="bg-slate-100 text-slate-600 font-bold uppercase tracking-wider sticky top-0 z-10 border-b border-slate-200">
             <tr>
-              <th className="py-2.5 px-3 text-center w-10 border-r border-slate-200 bg-slate-100">
+              <th className="py-2.5 px-3 text-center w-10 border-r border-slate-200 bg-slate-100/95 sticky left-0 z-30">
                 <input
                   type="checkbox"
                   checked={isAllVisibleSelected}
@@ -1471,8 +1474,8 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
                   title={isAllVisibleSelected ? 'Deselect all visible items' : 'Select all visible items on this page'}
                 />
               </th>
-              {renderHeaderCell('diNo', '(A) DI NO')}
-              {renderHeaderCell('invoiceNo', '(B) INVOICE NO', true)}
+              {renderHeaderCell('diNo', '(A) DI NO', 'left-[40px]')}
+              {renderHeaderCell('invoiceNo', '(B) INVOICE NO', 'left-[170px]')}
               {renderHeaderCell('date', '(C) Date')}
               {renderHeaderCell('buyerName', '(D) Buyer Name')}
               {renderHeaderCell('transporterName', '(E) Transporter Name')}

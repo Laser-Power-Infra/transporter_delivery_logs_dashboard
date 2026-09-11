@@ -141,7 +141,9 @@ export default function DashboardPage() {
 
   // Fetch delivery data from PostgreSQL DB with ultra-fast server-side queries
   const fetchDeliveries = useCallback(async () => {
-    setLoading(true);
+    if (deliveries.length === 0) {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       params.append('page', String(page));
@@ -195,7 +197,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, search, statusFilter, transporterFilter, mismatchOnly, columnFilters, dateRangeFilters]);
+  }, [page, limit, search, statusFilter, transporterFilter, mismatchOnly, columnFilters, dateRangeFilters, deliveries.length]);
 
   // Fetch data on state change
   useEffect(() => {

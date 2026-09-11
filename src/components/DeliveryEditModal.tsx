@@ -45,6 +45,8 @@ export const DeliveryEditModal: React.FC<EditModalProps> = ({
         deliveryRemarks: delivery.deliveryRemarks || '',
         vehicleReachedDate: delivery.vehicleReachedDate || '',
         deliveryDate: delivery.deliveryDate || '',
+        storeRemarks: delivery.storeRemarks || '',
+        storeOtherDetails: delivery.storeOtherDetails || '',
       });
       setResolveMismatchChecked(delivery.hasMismatch);
     }
@@ -356,6 +358,30 @@ export const DeliveryEditModal: React.FC<EditModalProps> = ({
                 value={formData.deliveryDate || ''}
                 onChange={(e) => handleChange('deliveryDate', e.target.value)}
                 placeholder="e.g. 29-05-2026"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+              />
+            </div>
+
+            {/* STORE REMARKS */}
+            <div className="md:col-span-3">
+              <label className="block text-slate-700 font-bold mb-1">(S) STORE REMARKS</label>
+              <input
+                type="text"
+                value={formData.storeRemarks || ''}
+                onChange={(e) => handleChange('storeRemarks', e.target.value)}
+                placeholder="Enter store remarks..."
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+              />
+            </div>
+
+            {/* STORE OTHER DETAILS */}
+            <div className="md:col-span-3">
+              <label className="block text-slate-700 font-bold mb-1">(T) STORE OTHER DETAILS</label>
+              <input
+                type="text"
+                value={formData.storeOtherDetails || ''}
+                onChange={(e) => handleChange('storeOtherDetails', e.target.value)}
+                placeholder="Enter store other details..."
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
               />
             </div>

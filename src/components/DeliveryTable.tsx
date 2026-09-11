@@ -1117,7 +1117,12 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
 
       const data = await res.json();
       if (data.success) {
-        onRefreshData();
+        // Update item in place seamlessly without full-page refresh or loading state reset
+        if (data.delivery) {
+          Object.assign(item, data.delivery);
+        } else {
+          (item as any)[field] = newVal;
+        }
       } else {
         alert(data.error || 'Failed to update field');
       }
@@ -1126,7 +1131,7 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
     } finally {
       setSavingCellKey(null);
     }
-  }, [activeUser, onRefreshData]);
+  }, [activeUser]);
 
   // Header Cell Renderer
   const renderHeaderCell = (fieldKey: string, label: string, isSticky: boolean = false) => {

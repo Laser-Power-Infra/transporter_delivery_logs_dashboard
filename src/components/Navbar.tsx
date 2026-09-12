@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { User } from '@/types';
-import { RefreshCw, History, AlertTriangle, UserCheck, FileSpreadsheet, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
+import { RefreshCw, History, AlertTriangle, UserCheck, FileSpreadsheet, LogOut, ShieldCheck, UserPlus, Upload } from 'lucide-react';
 
 interface NavbarProps {
   users: User[];
@@ -11,6 +11,7 @@ interface NavbarProps {
   onOpenSync: () => void;
   onOpenAuditLogs: () => void;
   onOpenMismatches: () => void;
+  onOpenBulkStoreUpload?: () => void;
   onOpenUserManagement?: () => void;
   onLogout?: () => void;
   mismatchCount: number;
@@ -24,6 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSync,
   onOpenAuditLogs,
   onOpenMismatches,
+  onOpenBulkStoreUpload,
   onOpenUserManagement,
   onLogout,
   mismatchCount,
@@ -67,6 +69,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
             <span>{isSyncing ? 'Syncing...' : 'Sync Sheet Data'}</span>
           </button>
+
+          {/* Bulk Store Upload Button */}
+          {onOpenBulkStoreUpload && (
+            <button
+              onClick={onOpenBulkStoreUpload}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition"
+              title="Upload Excel or CSV file with DI No and Store Remarks"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Bulk Store Upload</span>
+            </button>
+          )}
 
           {/* Audit Logs Button */}
           <button

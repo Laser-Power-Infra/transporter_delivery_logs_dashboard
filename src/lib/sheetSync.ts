@@ -154,11 +154,56 @@ export async function processSheetSync(
 
 
 
+  // Save all existing storeRemarks and storeOtherDetails to prevent data loss during sync
+  const existingStoreRemarksMap = new Map<string, { storeRemarks?: string; storeOtherDetails?: string }>();
+  try {
+    const existingWithRemarks = await prisma.delivery.findMany({
+      where: {
+        OR: [
+          { storeRemarks: { not: '' } },
+          { storeOtherDetails: { not: '' } },
+        ],
+      },
+      select: {
+        invoiceNo: true,
+        diNo: true,
+        storeRemarks: true,
+        storeOtherDetails: true,
+      },
+    });
+
+    existingWithRemarks.forEach((item) => {
+      if (item.storeRemarks || item.storeOtherDetails) {
+        const data = {
+          storeRemarks: item.storeRemarks || '',
+          storeOtherDetails: item.storeOtherDetails || '',
+        };
+        if (item.invoiceNo) existingStoreRemarksMap.set(`inv_${item.invoiceNo}`, data);
+        if (item.diNo) existingStoreRemarksMap.set(`di_${item.diNo}`, data);
+        if (item.invoiceNo && item.diNo) existingStoreRemarksMap.set(`both_${item.invoiceNo}_${item.diNo}`, data);
+      }
+    });
+  } catch (e) {
+    console.warn('Could not back up existing store remarks before sync:', e);
+  }
+
+  const getSavedStoreData = (invNo?: string, diNo?: string) => {
+    if (invNo && diNo && existingStoreRemarksMap.has(`both_${invNo}_${diNo}`)) {
+      return existingStoreRemarksMap.get(`both_${invNo}_${diNo}`)!;
+    }
+    if (invNo && existingStoreRemarksMap.has(`inv_${invNo}`)) {
+      return existingStoreRemarksMap.get(`inv_${invNo}`)!;
+    }
+    if (diNo && existingStoreRemarksMap.has(`di_${diNo}`)) {
+      return existingStoreRemarksMap.get(`di_${diNo}`)!;
+    }
+    return null;
+  };
+
   if (clearCorruptedOldRecords) {
     try {
-      await prisma.auditLog.deleteMany({});
       await prisma.delivery.deleteMany({});
-      stats.details.push('Database reset: Purged all old records for clean re-sync');
+      stats.details.push('Database reset: Purged delivery records for clean re-sync');
     } catch (e) {
       console.warn('Failed to reset database:', e);
     }
@@ -170,11 +215,14 @@ export async function processSheetSync(
     // Ultra-fast Bulk Insert for all sheet rows (16,000+ items)
     const now = new Date();
     const toCreate = rows.map((row, idx) => {
+      const savedStore = getSavedStoreData(row.invoiceNo, row.diNo);
       const data: Record<string, any> = {
         id: `del_${now.getTime()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
         invoiceNo: row.invoiceNo || '',
         diNo: row.diNo || '',
         deliveryStatus: row.deliveryStatus || 'PENDING',
+        storeRemarks: savedStore?.storeRemarks || '',
+        storeOtherDetails: savedStore?.storeOtherDetails || '',
         lastSyncedAt: now,
         createdAt: now,
         updatedAt: now,
@@ -287,11 +335,14 @@ export async function processSheetSync(
     }
 
     if (!existingDB) {
+      const savedStore = getSavedStoreData(row.invoiceNo, row.diNo);
       const newDeliveryData: Record<string, any> = {
         id: `del_${now.getTime()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
         invoiceNo: row.invoiceNo || '',
         diNo: row.diNo || '',
         deliveryStatus: row.deliveryStatus || 'PENDING',
+        storeRemarks: savedStore?.storeRemarks || '',
+        storeOtherDetails: savedStore?.storeOtherDetails || '',
         lastSyncedAt: now,
         createdAt: now,
         updatedAt: now,

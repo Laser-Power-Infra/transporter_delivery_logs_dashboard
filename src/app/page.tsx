@@ -10,6 +10,7 @@ import { SyncModal } from '@/components/SyncModal';
 import { MismatchModal } from '@/components/MismatchModal';
 import { LoginModal } from '@/components/LoginModal';
 import { UserManagementModal } from '@/components/UserManagementModal';
+import { BulkStoreUploadModal } from '@/components/BulkStoreUploadModal';
 import { Delivery, User } from '@/types';
 
 export default function DashboardPage() {
@@ -121,6 +122,7 @@ export default function DashboardPage() {
   const [isAuditLogsModalOpen, setIsAuditLogsModalOpen] = useState<boolean>(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
   const [isMismatchModalOpen, setIsMismatchModalOpen] = useState<boolean>(false);
+  const [isBulkStoreUploadModalOpen, setIsBulkStoreUploadModalOpen] = useState<boolean>(false);
 
   // Fetch initial user list
   useEffect(() => {
@@ -261,6 +263,7 @@ export default function DashboardPage() {
         onOpenAuditLogs={() => setIsAuditLogsModalOpen(true)}
         onOpenSync={() => setIsSyncModalOpen(true)}
         onOpenMismatches={() => setIsMismatchModalOpen(true)}
+        onOpenBulkStoreUpload={() => setIsBulkStoreUploadModalOpen(true)}
         onOpenUserManagement={() => setIsUserManagementModalOpen(true)}
         onLogout={handleLogout}
         mismatchCount={liveStats.mismatchCount}
@@ -380,6 +383,14 @@ export default function DashboardPage() {
         isOpen={isUserManagementModalOpen}
         onClose={() => setIsUserManagementModalOpen(false)}
         activeUser={activeUser}
+      />
+
+      {/* Bulk Store Upload Modal */}
+      <BulkStoreUploadModal
+        isOpen={isBulkStoreUploadModalOpen}
+        onClose={() => setIsBulkStoreUploadModalOpen(false)}
+        activeUser={activeUser}
+        onUploadSuccess={fetchDeliveries}
       />
 
     </div>

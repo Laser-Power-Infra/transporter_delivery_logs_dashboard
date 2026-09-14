@@ -20,6 +20,8 @@ export const EXCEL_COLUMNS = [
   { label: 'DELIVERY REMARKS', key: 'deliveryRemarks' },
   { label: 'VEHICLE REACHED DATE', key: 'vehicleReachedDate' },
   { label: 'DELIVERY DATE', key: 'deliveryDate' },
+  { label: 'STORE REMARKS', key: 'storeRemarks' },
+  { label: 'STORE OTHER DETAILS', key: 'storeOtherDetails' },
 ];
 
 export function exportDeliveriesToExcel(deliveries: Delivery[], customFilename?: string) {
@@ -28,7 +30,7 @@ export function exportDeliveriesToExcel(deliveries: Delivery[], customFilename?:
     return;
   }
 
-  // Map Delivery objects to clean Excel rows matching sheet columns A to R
+  // Map Delivery objects to clean Excel rows including STORE REMARKS and STORE OTHER DETAILS
   const exportRows = deliveries.map((d) => ({
     'DI NO': d.diNo || '',
     'INVOICE NO': d.invoiceNo || '',
@@ -48,6 +50,8 @@ export function exportDeliveriesToExcel(deliveries: Delivery[], customFilename?:
     'DELIVERY REMARKS': d.deliveryRemarks || '',
     'VEHICLE REACHED DATE': d.vehicleReachedDate || '',
     'DELIVERY DATE': d.deliveryDate || '',
+    'STORE REMARKS': d.storeRemarks || '',
+    'STORE OTHER DETAILS': d.storeOtherDetails || '',
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(exportRows);
@@ -72,6 +76,8 @@ export function exportDeliveriesToExcel(deliveries: Delivery[], customFilename?:
     { wch: 20 }, // DELIVERY REMARKS
     { wch: 20 }, // VEHICLE REACHED DATE
     { wch: 20 }, // DELIVERY DATE
+    { wch: 25 }, // STORE REMARKS
+    { wch: 25 }, // STORE OTHER DETAILS
   ];
 
   const workbook = XLSX.utils.book_new();

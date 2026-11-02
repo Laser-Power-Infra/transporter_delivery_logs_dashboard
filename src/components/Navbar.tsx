@@ -2,31 +2,29 @@
 
 import React from 'react';
 import { User } from '@/types';
-import { RefreshCw, History, AlertTriangle, UserCheck, FileSpreadsheet, LogOut, ShieldCheck, UserPlus, Upload } from 'lucide-react';
+import { RefreshCw, History, AlertTriangle, UserCheck, FileSpreadsheet, LogOut, ShieldCheck, UserPlus, Upload, Eye, KeyRound } from 'lucide-react';
 
 interface NavbarProps {
-  users: User[];
   activeUser: User | null;
-  onSelectUser: (user: User) => void;
-  onOpenSync: () => void;
+  onOpenSync?: () => void;
   onOpenAuditLogs: () => void;
   onOpenMismatches: () => void;
   onOpenBulkStoreUpload?: () => void;
   onOpenUserManagement?: () => void;
+  onOpenChangePassword?: () => void;
   onLogout?: () => void;
   mismatchCount: number;
   isSyncing: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  users,
   activeUser,
-  onSelectUser,
   onOpenSync,
   onOpenAuditLogs,
   onOpenMismatches,
   onOpenBulkStoreUpload,
   onOpenUserManagement,
+  onOpenChangePassword,
   onLogout,
   mismatchCount,
   isSyncing,
@@ -60,7 +58,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Sync Button */}
+          {/* Read-only badge */}
+          {activeUser?.role === 'VIEWER' && (
+            <span className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold" title="This account can view data but cannot edit, sync or upload">
+              <Eye className="w-3.5 h-3.5" />
+              <span>Read-only</span>
+            </span>
+          )}
+
+          {/* Sync Button (hidden for read-only accounts) */}
+          {onOpenSync && (
           <button
             onClick={onOpenSync}
             disabled={isSyncing}
@@ -69,6 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
             <span>{isSyncing ? 'Syncing...' : 'Sync Sheet Data'}</span>
           </button>
+          )}
 
           {/* Bulk Store Upload Button */}
           {onOpenBulkStoreUpload && (
@@ -127,6 +135,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-[10px] text-slate-400 block mt-0.5">{activeUser.email}</span>
               </div>
             </div>
+          )}
+
+          {/* Change Password Button */}
+          {onOpenChangePassword && (
+            <button
+              onClick={onOpenChangePassword}
+              className="flex items-center space-x-1 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition"
+              title="Change your password"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Change Password</span>
+            </button>
           )}
 
           {/* Logout Button */}

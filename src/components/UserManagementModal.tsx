@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Users, ShieldCheck, UserCheck, KeyRound, Mail, User as UserIcon, CheckCircle2, AlertCircle } from 'lucide-react';
-import { User } from '@/types';
+import { Role, User } from '@/types';
 
 interface UserManagementModalProps {
   isOpen: boolean;
@@ -19,7 +19,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [role, setRole] = useState<'ADMIN' | 'OPERATOR'>('OPERATOR');
+  const [role, setRole] = useState<Role>('OPERATOR');
+  const [resetInfo, setResetInfo] = useState<{ email: string; tempPassword: string } | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
   
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,12 +44,33 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
       loadUsers();
       setError(null);
       setSuccessMsg(null);
+      setResetInfo(null);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const isAdmin = activeUser?.role === 'ADMIN';
+
+  // Admin-mediated password reset (see /api/auth/forgot-password for why there is no email link).
+  const handleResetPassword = async (u: User) => {
+    if (!window.confirm(`Generate a new temporary password for ${u.email}? Their current password will stop working.`)) return;
+    setError(null);
+    setSuccessMsg(null);
+    setResetInfo(null);
+    setResettingId(u.id);
+    try {
+      const res = await fetch(`/api/users/${u.id}/reset-password`, { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to reset password');
+      setResetInfo({ email: u.email, tempPassword: data.tempPassword });
+      loadUsers();
+    } catch (err: any) {
+      setError(err.message || 'Failed to reset password');
+    } finally {
+      setResettingId(null);
+    }
+  };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,7 +134,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
           {!isAdmin ? (
             <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-              <span>Only Admin accounts can add new users or admins. You are currently logged in as an <strong>OPERATOR</strong>.</span>
+              <span>Only Admin accounts can add new users or admins. You are currently logged in as an <strong>{activeUser?.role}</strong>.</span>
             </div>
           ) : (
             <form onSubmit={handleCreateUser} className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-4">
@@ -184,10 +207,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   <label className="block text-[11px] font-bold text-slate-600 mb-1 uppercase">Account Role</label>
                   <select
                     value={role}
-                    onChange={(e) => setRole(e.target.value as 'ADMIN' | 'OPERATOR')}
+                    onChange={(e) => setRole(e.target.value as Role)}
                     className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold"
                   >
                     <option value="OPERATOR">OPERATOR (Normal User)</option>
+                    <option value="VIEWER">VIEWER (Read-only Review)</option>
                     <option value="ADMIN">ADMIN (Full Admin Access)</option>
                   </select>
                 </div>
@@ -203,6 +227,18 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </button>
               </div>
             </form>
+          )}
+
+          {resetInfo && (
+            <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded-lg space-y-1">
+              <div className="font-bold">Temporary password for {resetInfo.email} (shown only once):</div>
+              <code className="block font-mono text-sm bg-white border border-amber-200 rounded px-2 py-1 select-all">{resetInfo.tempPassword}</code>
+              <div>Share it privately and ask the user to change it via &quot;Change Password&quot; after signing in.</div>
+            </div>
+          )}
+
+          {isAdmin && error && !loading && (
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium rounded-lg">{error}</div>
           )}
 
           {/* List of Existing Accounts */}
@@ -230,15 +266,34 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     </div>
                   </div>
 
-                  <span
-                    className={`px-2 py-0.5 text-[10px] font-extrabold rounded uppercase tracking-wider ${
-                      u.role === 'ADMIN'
-                        ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                    }`}
-                  >
-                    {u.role}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {u.passwordResetRequestedAt && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-800 border border-amber-200" title={`Requested ${new Date(u.passwordResetRequestedAt).toLocaleString()}`}>
+                        Reset requested
+                      </span>
+                    )}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => handleResetPassword(u)}
+                        disabled={resettingId === u.id}
+                        className="px-2 py-0.5 text-[10px] font-bold rounded border border-slate-300 text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                      >
+                        {resettingId === u.id ? 'Resetting...' : 'Reset Password'}
+                      </button>
+                    )}
+                    <span
+                      className={`px-2 py-0.5 text-[10px] font-extrabold rounded uppercase tracking-wider ${
+                        u.role === 'ADMIN'
+                          ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                          : u.role === 'VIEWER'
+                          ? 'bg-slate-100 text-slate-700 border border-slate-300'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      }`}
+                    >
+                      {u.role === 'VIEWER' ? 'VIEWER (read-only)' : u.role}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireUser } from '@/lib/guard';
 import { createAuditLog } from '@/lib/audit';
 import { FIELD_LABELS } from '@/lib/sheetSync';
 import { invalidateDeliveryCache } from '@/lib/cache';
@@ -10,6 +11,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = await requireUser(req, 'read');
+  if (auth.response) return auth.response;
+
   try {
     const delivery = await prisma.delivery.findUnique({
       where: { id: params.id },
@@ -41,16 +45,14 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = await requireUser(req, 'write');
+  if (auth.response) return auth.response;
+  // Audit identity always comes from the verified session, never from the request body.
+  const activeUser = auth.user;
+
   try {
     const body = await req.json();
-    const { updates, activeUser, resolveMismatch } = body;
-
-    if (!activeUser || !activeUser.id) {
-      return NextResponse.json(
-        { success: false, error: 'User identity is required for audit logging' },
-        { status: 400 }
-      );
-    }
+    const { updates, resolveMismatch } = body;
 
     const existingDB = await prisma.delivery.findUnique({
       where: { id: params.id },

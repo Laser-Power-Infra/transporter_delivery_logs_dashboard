@@ -1,10 +1,11 @@
-export type Role = 'ADMIN' | 'OPERATOR';
+export type Role = 'ADMIN' | 'OPERATOR' | 'VIEWER';
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: Role;
+  passwordResetRequestedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

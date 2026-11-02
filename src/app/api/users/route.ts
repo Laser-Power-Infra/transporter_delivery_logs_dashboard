@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getSessionUser, hashPassword } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
+import { requireUser } from '@/lib/guard';
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/users - List all active users
-export async function GET() {
+// GET /api/users - List all users (any authenticated user)
+export async function GET(req: NextRequest) {
+  const auth = await requireUser(req, 'read');
+  if (auth.response) return auth.response;
+
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -13,6 +17,7 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
+        passwordResetRequestedAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -31,23 +36,10 @@ export async function GET() {
 
 // POST /api/users - Create new User or Admin (Restricted to ADMIN role only)
 export async function POST(req: NextRequest) {
+  const auth = await requireUser(req, 'admin');
+  if (auth.response) return auth.response;
+
   try {
-    const sessionUser = await getSessionUser(req);
-
-    if (!sessionUser) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    if (sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden: Only Admin users are authorized to create new users or admins.' },
-        { status: 403 }
-      );
-    }
-
     const { name, email, password, role } = await req.json();
 
     if (!name || !email || !password) {
@@ -58,7 +50,14 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
-    const targetRole = role === 'ADMIN' ? 'ADMIN' : 'OPERATOR';
+    const targetRole = role === 'ADMIN' ? 'ADMIN' : role === 'VIEWER' ? 'VIEWER' : 'OPERATOR';
+
+    if (String(password).length < 8) {
+      return NextResponse.json(
+        { success: false, error: 'Password must be at least 8 characters long' },
+        { status: 400 }
+      );
+    }
 
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({

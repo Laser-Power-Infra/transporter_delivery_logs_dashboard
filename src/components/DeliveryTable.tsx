@@ -233,6 +233,10 @@ const DebouncedDateRangeInput = React.memo<{
 });
 DebouncedDateRangeInput.displayName = 'DebouncedDateRangeInput';
 
+// True when the signed-in user is a read-only (VIEWER) account: inline editing is disabled.
+// The server rejects writes from such accounts regardless; this only keeps the UI honest.
+const ReadOnlyContext = React.createContext<boolean>(false);
+
 // Memoized Cell Component
 const MemoizedTableCell = React.memo<{
   item: Delivery;
@@ -244,6 +248,7 @@ const MemoizedTableCell = React.memo<{
   onSaveCell: (item: Delivery, field: keyof Delivery, newVal: string) => void;
   onFilterByValue?: (field: string, val: string) => void;
 }>(({ item, fieldKey, isSticky = false, isSaving, mismatch, statusOptions, onSaveCell, onFilterByValue }) => {
+  const readOnly = React.useContext(ReadOnlyContext);
   const [isEditing, setIsEditing] = useState(false);
   const [localVal, setLocalVal] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -259,6 +264,7 @@ const MemoizedTableCell = React.memo<{
   }, [isEditing]);
 
   const handleStartEdit = () => {
+    if (readOnly) return;
     setLocalVal(valStr);
     setIsEditing(true);
   };
@@ -320,10 +326,12 @@ const MemoizedTableCell = React.memo<{
   return (
     <div
       onClick={handleStartEdit}
-      className={`w-full h-full min-h-[32px] py-1.5 px-2.5 flex items-center justify-between cursor-pointer rounded hover:bg-sky-50/80 hover:ring-1 hover:ring-sky-300 transition group ${
+      className={`w-full h-full min-h-[32px] py-1.5 px-2.5 flex items-center justify-between rounded transition group ${
+        readOnly ? 'cursor-default' : 'cursor-pointer hover:bg-sky-50/80 hover:ring-1 hover:ring-sky-300'
+      } ${
         isSticky ? (item.hasMismatch ? 'bg-rose-100 text-rose-950 font-bold' : 'bg-white text-slate-900 font-semibold') : ''
       }`}
-      title="Click to edit cell directly (Excel-like edit)"
+      title={readOnly ? undefined : 'Click to edit cell directly (Excel-like edit)'}
     >
       <div className="truncate flex-1">
         {mismatch ? (
@@ -1104,7 +1112,7 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
 
   // Save inline cell change to PostgreSQL DB
   const handleCellSave = useCallback(async (item: Delivery, field: keyof Delivery, newVal: string) => {
-    if (!activeUser) return;
+    if (!activeUser || activeUser.role === 'VIEWER') return;
     const cellKey = `${item.id}:${field}`;
     setSavingCellKey(cellKey);
 
@@ -1114,7 +1122,6 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           updates: { [field]: newVal },
-          activeUser,
         }),
       });
 
@@ -1263,6 +1270,7 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
   };
 
   return (
+    <ReadOnlyContext.Provider value={activeUser?.role === 'VIEWER'}>
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       
       {/* Controls Bar: Search, Column Filter Toggles & Filters */}
@@ -1605,5 +1613,6 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({
       </div>
 
     </div>
+    </ReadOnlyContext.Provider>
   );
 };

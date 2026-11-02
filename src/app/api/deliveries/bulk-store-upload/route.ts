@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireUser } from '@/lib/guard';
 import { createAuditLog } from '@/lib/audit';
 import { invalidateDeliveryCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const auth = await requireUser(req, 'write');
+  if (auth.response) return auth.response;
+
   try {
     const body = await req.json();
-    const { records, activeUser } = body;
+    const { records } = body;
 
     if (!Array.isArray(records) || records.length === 0) {
       return NextResponse.json(
@@ -17,11 +21,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = activeUser || {
-      id: 'usr_admin_1',
-      name: 'Admin',
-      email: 'admin@delivery.com',
-    };
+    // Audit identity always comes from the verified session, never from the request body.
+    const user = auth.user;
 
     // Load all DB deliveries to match quickly by DI NO or INVOICE NO
     const dbDeliveries = await prisma.delivery.findMany({

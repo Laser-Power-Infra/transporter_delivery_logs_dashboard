@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Papa from 'papaparse';
 import { normalizeSheetRow, processSheetSync } from '@/lib/sheetSync';
 import { SheetRow } from '@/types';
+import { requireUser } from '@/lib/guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,14 +18,15 @@ function getCsvExportUrl(sheetUrl: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Sync writes to the DB, so read-only accounts are not allowed to trigger it.
+  const auth = await requireUser(req, 'write');
+  if (auth.response) return auth.response;
+
   try {
     const body = await req.json().catch(() => ({}));
     const sheetUrl = body.sheetUrl || DEFAULT_SHEET_URL;
-    const activeUser = body.activeUser || {
-      id: 'usr_admin_1',
-      name: 'Admin',
-      email: 'admin@delivery.com',
-    };
+    // Audit identity always comes from the verified session, never from the request body.
+    const activeUser = auth.user;
     const clearOldCorruptedData = Boolean(body.clearOldCorruptedData);
 
     const baseCsvUrl = getCsvExportUrl(sheetUrl);

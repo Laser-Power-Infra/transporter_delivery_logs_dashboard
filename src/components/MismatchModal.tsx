@@ -8,7 +8,8 @@ interface MismatchModalProps {
   isOpen: boolean;
   onClose: () => void;
   mismatchDeliveries: Delivery[];
-  onResolveMismatch: (delivery: Delivery) => void;
+  // Omitted for read-only accounts: the "Review & Edit" action is hidden.
+  onResolveMismatch?: (delivery: Delivery) => void;
 }
 
 export const MismatchModal: React.FC<MismatchModalProps> = ({
@@ -67,6 +68,7 @@ export const MismatchModal: React.FC<MismatchModalProps> = ({
                       <span className="font-mono font-bold text-sm text-slate-900 bg-rose-100 px-2 py-0.5 rounded border border-rose-300">{item.invoiceNo}</span>
                       <span className="ml-2 text-xs text-slate-700 font-medium">Buyer: {item.buyerName || 'N/A'}</span>
                     </div>
+                    {onResolveMismatch && (
                     <button
                       onClick={() => onResolveMismatch(item)}
                       className="flex items-center space-x-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-xs font-bold shadow transition"
@@ -74,6 +76,7 @@ export const MismatchModal: React.FC<MismatchModalProps> = ({
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>Review & Edit DB Record</span>
                     </button>
+                    )}
                   </div>
 
                   {/* Field Mismatch Breakdown */}
